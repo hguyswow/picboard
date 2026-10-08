@@ -79,6 +79,10 @@
      - 시원한 믹스커피 한 잔 후원 안내 (국민은행: `027210862460`, PayPal: `hguyswow` / paypal.me/hguyswow) 및 피드백 메일(`hguyswow@gmail.com`) 섹션 탑재.
   3. **웹 스튜디오 가이드 모달 (`modalGuide`) 연동**:
      - 5번째 탭 `[☕ 제작 이야기 & 후원]` 신설하여 프로그램 사용 중에도 언제든 개발 이야기와 국민은행/PayPal 후원 안내 확인 가능.
+  4. **로컬 에이전트 헤르메스(Hermes Agent) 연동 및 푸시 사전 검증 완료**:
+     - 로컬 Hermes WebUI(포트 8787) API와 연동하여 `E:\dev\picboard` 워크스페이스 세션을 생성하고 GitHub 푸시 작업 지시 전달.
+     - 헤르메스가 직접 로컬 Git 상태(최신 커밋 `dfb8b43`, clean), 원격 `origin` 설정, GitHub REST API(저장소 404 확인), `gh` CLI 설치 유무를 다각도로 정밀 진단 완료.
+     - 사용자가 GitHub 웹에서 `picboard` 빈 저장소 생성 시 즉시 푸시 완료 가능한 상태로 준비 완료.
 
 ---
 
