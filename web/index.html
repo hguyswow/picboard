@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minos 사진대지 웹 스튜디오 (PictureBoard Web)</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
+  <link rel="stylesheet" href="/static/fontawesome/all.min.css">
+</head>
+<body>
+  <!-- [1단] 상단 글로벌 헤더 (브랜드, 모드 전환기, 공사명, 종료) -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <div class="logo-area">
+        <div class="logo"><i class="fa-solid fa-camera-retro"></i> Minos 사진대지 Studio <span class="version-badge">v2.4.0</span></div>
+        <div class="contact-wrap" onclick="copyContactEmail()" title="직책만 부장님 을 위해 제작함">
+          <span class="contact-badge"><i class="fa-regular fa-envelope"></i> 문의:hguyswow@gmail.com</span>
+          <div class="contact-popover">
+            <i class="fa-solid fa-heart" style="color:#f43f5e;"></i> 직책만 부장님 을 위해 제작함
+          </div>
+        </div>
+        <button type="button" class="btn-guide-badge" id="btnOpenGuide" onclick="openGuideModal()" title="프로그램 사용 가이드 및 설명서 열기">
+          <i class="fa-solid fa-book-open"></i> <span>가이드</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 중앙: 3단 UI 작업 모드 스위처 (시선 집중 하이라이트) -->
+    <div class="nav-center">
+      <div class="mode-switcher-wrap" title="UI 작업 모드 선택 (이지 / 사용자 / 전문가)">
+        <span class="mode-label-badge"><i class="fa-solid fa-sliders"></i> 모드</span>
+        <div class="segmented-control" id="uiModeSwitcher">
+          <button type="button" class="seg-btn" data-mode="easy" id="btnModeEasy" title="이지 모드: 꼭 필요한 기본 기능만 심플하게 노출"><i class="fa-solid fa-bolt"></i> <span>이지</span></button>
+          <button type="button" class="seg-btn" data-mode="custom" id="btnModeCustom" title="사용자 모드: 내가 원하는 버튼만 골라서 노출"><i class="fa-solid fa-sliders"></i> <span>사용자</span></button>
+          <button type="button" class="seg-btn" data-mode="expert" id="btnModeExpert" title="전문가 모드: 모든 정밀 편집 기능 100% 노출"><i class="fa-solid fa-cube"></i> <span>전문가</span></button>
+        </div>
+        <button type="button" id="btnCustomUiSettings" class="btn-xs btn-outline btn-custom-config" title="사용자 모드 버튼 구성 설정" onclick="openCustomUiModal()">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 우측: 공사명 입력창 & 프로그램 종료 -->
+    <div class="nav-right">
+      <div class="project-input-group">
+        <label for="projectName">공사명 :</label>
+        <input type="text" id="projectName" value="검암역세권 공공주택지구 도시시설물 건설공사" placeholder="공사명을 입력하세요">
+      </div>
+      <button id="btnShutdown" class="btn btn-outline-danger btn-icon-compact" title="프로그램(백그라운드 서버) 완전 종료">
+        <i class="fa-solid fa-power-off"></i> <span>종료</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- [2단] 작업 액션 툴바 (사진 추가 및 프로젝트/보고서 저장 도구) -->
+  <div class="action-toolbar">
+    <div class="toolbar-left">
+      <label class="btn btn-primary" title="사진 파일 추가" id="lblFileInput">
+        <i class="fa-solid fa-file-circle-plus"></i> 파일 추가
+        <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none;">
+      </label>
+      <label class="btn btn-secondary" title="폴더 통째로 추가" id="lblFolderInput">
+        <i class="fa-solid fa-folder-plus"></i> 폴더 추가
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+      </label>
+      <button id="btnPaste" class="btn btn-info" title="클립보드 이미지 즉시 붙여넣기 (Ctrl+V)">
+        <i class="fa-solid fa-paste"></i> 붙여넣기 <span class="badge">Ctrl+V</span>
+      </button>
+      <button id="btnOpenDateModal" class="btn btn-warning" title="사진 메타데이터/수정일로부터 날짜 추출">
+        <i class="fa-solid fa-calendar-days"></i> 날짜 추출도구
+      </button>
+      <button id="btnOpenPresets" class="btn btn-outline">
+        <i class="fa-solid fa-sliders"></i> 프리셋 관리
+      </button>
+    </div>
+    <div class="toolbar-right">
+      <button id="btnSaveProject" class="btn btn-dark btn-icon-compact" title="작업 상태 전체를 프로젝트 파일(.picboard)로 저장">
+        <i class="fa-solid fa-floppy-disk"></i> <span>저장</span>
+      </button>
+      <label class="btn btn-outline btn-icon-compact" title="저장된 프로젝트 파일(.picboard) 불러오기" id="lblProjectFileInput">
+        <i class="fa-solid fa-folder-open"></i> <span>열기</span>
+        <input type="file" id="projectFileInput" accept=".picboard,.json" style="display:none;">
+      </label>
+      <button id="btnExportZip" class="btn btn-info btn-icon-compact" title="스탬프가 적용된 실제 사진 일괄 ZIP 다운로드">
+        <i class="fa-solid fa-file-zipper"></i> <span>사진 ZIP</span>
+      </button>
+      <button id="btnExportPdf" class="btn btn-danger btn-icon-compact" title="A4 규격 사진대지 PDF 저장">
+        <i class="fa-solid fa-file-pdf"></i> <span>PDF</span>
+      </button>
+      <button id="btnExportExcel" class="btn btn-success btn-icon-compact" title="사진대지 엑셀 (.xlsx) 파일 저장">
+        <i class="fa-solid fa-file-excel"></i> <span>엑셀</span>
+      </button>
+      <button id="btnPrint" class="btn btn-outline btn-icon-compact" title="A4 사진대지 즉시 인쇄 (Ctrl+P)">
+        <i class="fa-solid fa-print"></i> <span>인쇄</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 메인 작업 영역 -->
+  <main class="main-container">
+    <!-- 좌측 사이드바: 사진 리스트 & 정렬 & 일괄 작업 -->
+    <aside class="left-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-header-top">
+          <div class="list-stats">
+            <label class="checkbox-container select-all-label" title="전체 사진 선택 / 해제">
+              <input type="checkbox" id="selectAllCheckbox">
+              <span>전체선택</span>
+            </label>
+            <span class="selection-counter">(선택 <strong id="selectedCount" class="highlight-count">0</strong> / <strong id="totalCount">0</strong>장)</span>
+          </div>
+          <div class="sidebar-quick-actions">
+            <button id="btnToggleAllStamps" class="btn-xs btn-dark" title="스탬프 전체/선택 ON/OFF 토글">
+              <i class="fa-solid fa-stamp"></i> 스탬프 ON
+            </button>
+            <button id="btnDeleteSelected" class="btn-xs btn-danger" title="선택된 사진 일괄 삭제">
+              <i class="fa-solid fa-trash"></i> 삭제
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-header-bottom">
+          <div class="sort-select-box">
+            <i class="fa-solid fa-arrow-down-short-wide sort-icon"></i>
+            <select id="sortSelect" title="정렬 기준">
+              <option value="date_asc" selected>촬영일자순 (오름차순 ⬆ 과거순)</option>
+              <option value="date_desc">촬영일자순 (내림차순 ⬇ 최신순)</option>
+              <option value="name_asc">파일명순 (오름차순 A-Z)</option>
+              <option value="name_desc">파일명순 (내림차순 Z-A)</option>
+              <option value="folder">폴더별 묶음</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 사진 목록 리스트 -->
+      <div class="photo-list" id="photoList">
+        <div class="empty-state">
+          <i class="fa-regular fa-images"></i>
+          <p>사진 파일을 드래그 앤 드롭하거나<br><strong>[파일 추가]</strong> 또는 <strong>Ctrl+V</strong>로 붙여넣으세요.</p>
+        </div>
+      </div>
+
+      <!-- 하단 일괄 수정 패널 (세로형 3행 전폭 레이아웃) -->
+      <div class="batch-panel">
+        <div class="batch-title">
+          <span class="batch-title-text"><i class="fa-solid fa-bolt"></i> 일괄 입력 (<span id="batchTargetDesc">전체 대상</span>)</span>
+          <div class="batch-title-tools">
+            <button id="btnBatchDateQuick" class="btn-xs btn-outline" title="메타정보에서 날짜 일괄 추출"><i class="fa-solid fa-calendar"></i> 날짜추출</button>
+            <button id="btnOpenBatchModal" class="btn-xs btn-primary" title="큰 창(모달)으로 일괄 입력"><i class="fa-solid fa-up-right-from-square"></i> 확장</button>
+          </div>
+        </div>
+        <div class="batch-form-vertical">
+          <div class="batch-row-2col">
+            <input type="text" id="batchWork" placeholder="일괄 공종 (예: 토공사)">
+            <input type="text" id="batchLoc" placeholder="일괄 위치 (예: STA. 0+120)">
+          </div>
+          <div class="batch-row-2col">
+            <input type="text" id="batchStampContent" placeholder="일괄 스탬프 요약 (예: 신호수)">
+            <input type="text" id="batchDate" placeholder="일괄 날짜 (YYYY.MM.DD)">
+          </div>
+          <div class="batch-row-action">
+            <input type="text" id="batchContent" placeholder="일괄 표 상세설명 (신호수 배치 및 통로확보...)" class="batch-content-input">
+            <button id="btnApplyBatch" class="btn btn-primary btn-sm"><span id="batchApplyBtnText">적용</span></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 우측 메인 영역: 편집 컨트롤러 & A4 2단 다중 페이지 미리보기 -->
+    <section class="right-content">
+      <!-- 상세 편집 바 -->
+      <div class="edit-toolbar" id="editToolbar">
+        <!-- 1행: 프리셋, 크롭모드, 회전, 여백, 스탬프 설정, 입력 대상 배지 -->
+        <div class="toolbar-row-top">
+          <div class="ctrl-group">
+            <label class="ctrl-label"><i class="fa-solid fa-wand-magic-sparkles"></i> 프리셋:</label>
+            <select id="comboPresetSelect" class="select-preset">
+              <option value="">프리셋 선택...</option>
+            </select>
+          </div>
+
+          <div class="ctrl-group">
+            <label class="ctrl-label">크롭:</label>
+            <select id="cropModeSelect" class="select-crop">
+              <option value="cover">비율유지 꽉채움 (기본)</option>
+              <option value="fit">비율유지 여백 (전체)</option>
+              <option value="stretch">늘임 (Stretch)</option>
+            </select>
+          </div>
+
+          <!-- 사진 회전 컨트롤 (⟲, ⟳) -->
+          <div class="ctrl-group">
+            <label class="ctrl-label">회전:</label>
+            <div class="btn-group">
+              <button id="btnRotateCcw" class="btn-xs btn-outline" title="반시계 90도 회전"><i class="fa-solid fa-rotate-left"></i> -90°</button>
+              <button id="btnRotateCw" class="btn-xs btn-outline" title="시계 90도 회전"><i class="fa-solid fa-rotate-right"></i> +90°</button>
+              <span id="lblRotation" class="badge">0°</span>
+            </div>
+          </div>
+
+          <!-- 사진 여백(Padding) 조절 슬라이더: 표 크기는 고정되고 사진만 줄어듦! -->
+          <div class="ctrl-group">
+            <label class="ctrl-label" title="사진 박스 내부 여백 조절 (표 크기는 고정됨)">사진 여백:</label>
+            <input type="range" id="sliderPadding" min="0" max="35" value="0" style="width: 75px;">
+            <span id="lblPaddingVal" class="badge">0px</span>
+          </div>
+
+          <!-- 스탬프 컨트롤 그룹 -->
+          <!-- 스탬프 & 표 컨트롤 그룹 -->
+          <div class="ctrl-group stamp-ctrl-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="itemStampToggle" checked>
+              <span class="checkbox-text">스탬프 표시</span>
+            </label>
+            <button id="btnOpenStampSettings" class="btn btn-sm btn-outline stamp-btn" title="사진 위 스탬프 상세 설정">
+              <i class="fa-solid fa-gear"></i> 스탬프 설정
+            </button>
+            <button id="btnOpenTableSettings" class="btn btn-sm btn-outline table-btn" style="margin-left: 6px;" title="사진대지 하단 표 항목(1~4개) 및 라벨 커스텀 설정">
+              <i class="fa-solid fa-table-cells"></i> 표 설정
+            </button>
+          </div>
+
+          <!-- 실시간 입력 대상 안내 배지 -->
+          <div class="ctrl-group" style="margin-left: auto;">
+            <span id="fieldTargetBadge" class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:600; font-size:11px; padding:4px 8px; border:1px solid #bae6fd; display:inline-flex; align-items:center; gap:4px;">
+              <i class="fa-solid fa-pen"></i> <span id="fieldTargetText">단일 사진 편집</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 2행: 공종, 위치, 내용, 촬영일자 및 사용자 정의 커스텀 필드 -->
+        <div class="toolbar-row-bottom">
+          <div class="field-item field-work" id="formGroupWork">
+            <label id="lblFieldWork">공    종 :</label>
+            <input type="text" id="fieldWork" placeholder="공종 입력">
+          </div>
+          <div class="field-item field-loc" id="formGroupLoc">
+            <label id="lblFieldLoc">위    치 :</label>
+            <input type="text" id="fieldLoc" placeholder="위치 입력">
+          </div>
+          <div class="field-item field-stamp-content" id="formGroupStampContent">
+            <label title="사진 위 스탬프에 들어가는 요약/키워드">스탬프 요약 :</label>
+            <input type="text" id="fieldStampContent" placeholder="요약 (예: 신호수)">
+          </div>
+          <div class="field-item field-content" id="formGroupContent">
+            <label id="lblFieldContent" title="사진대지 하단 표에 들어가는 상세 시공 설명">표 상세설명 :</label>
+            <input type="text" id="fieldContent" placeholder="상세 시공 내용 입력 (예: 신호수 배치 및 안전통로 확보)">
+          </div>
+          <div class="field-item field-date" id="formGroupDate">
+            <label id="lblFieldDate">촬영일자 :</label>
+            <input type="text" id="fieldDate" placeholder="YYYY.MM.DD">
+            <!-- 개별 사진 날짜 원클릭 추출 버튼군 -->
+            <div class="date-quick-btns">
+              <button id="btnExtractExif" class="btn-xs btn-primary" title="사진 메타데이터(EXIF) 촬영일 추출">📷 촬영일</button>
+              <button id="btnExtractMtime" class="btn-xs btn-secondary" title="파일 저장/수정일 추출">📁 수정일</button>
+            </div>
+          </div>
+          <!-- 사용자 정의 커스텀 속성 1 & 2 -->
+          <div class="field-item field-custom1" id="formGroupCustom1" style="display:none;">
+            <label id="lblFieldCustom1">사용자1 :</label>
+            <input type="text" id="fieldCustom1" placeholder="내용 입력">
+          </div>
+          <div class="field-item field-custom2" id="formGroupCustom2" style="display:none;">
+            <label id="lblFieldCustom2">사용자2 :</label>
+            <input type="text" id="fieldCustom2" placeholder="내용 입력">
+          </div>
+        </div>
+      </div>
+
+      <!-- A4 2단 다중 페이지 연속 스크롤 뷰 -->
+      <div class="preview-container">
+        <div class="page-nav-bar">
+          <span class="page-title"><i class="fa-solid fa-print"></i> A4 2단 실시간 인쇄 미리보기 (pictureboard.pdf 양식)</span>
+          <div class="page-controls">
+            <span id="pageIndicator" class="page-indicator">총 0페이지 / 0장</span>
+            <button id="btnAddBlankPage" class="btn btn-sm btn-outline" title="빈 사진대지 페이지 추가"><i class="fa-solid fa-plus"></i> 빈 페이지 추가</button>
+            <button id="btnRemoveBlankPage" class="btn btn-sm btn-outline-danger" title="추가된 빈 사진대지 페이지 삭제" disabled><i class="fa-solid fa-minus"></i> 빈 페이지 삭제</button>
+          </div>
+        </div>
+
+        <!-- 다중 A4 페이지들이 아래로 연속 스크롤되는 컨테이너 -->
+        <div class="a4-scroll-wrapper" id="a4PagesContainer">
+          <!-- JS에서 페이지별 A4 시트 동적 생성 -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 날짜 추출 및 일괄 변환 전용 모달 -->
+  <div class="modal" id="dateModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-calendar-days"></i> 날짜 추출 및 일괄 변환 설정</h3>
+        <button class="modal-close" onclick="closeModal('dateModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label class="setting-label">1. 날짜 추출 소스 선택</label>
+          <div class="radio-list">
+            <label class="radio-item">
+              <input type="radio" name="dateSource" value="exif" checked>
+              <span><strong>📷 사진 EXIF 메타데이터 (촬영일시)</strong> - 권장</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="dateSource" value="mtime">
+              <span><strong>📁 파일 최종 수정일시 (Modified Time)</strong></span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="dateSource" value="ctime">
+              <span><strong>💾 파일 생성/복사일시 (Created Time)</strong></span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="dateSource" value="custom">
+              <span><strong>✏️ 사용자 직접 지정 날짜:</strong></span>
+              <input type="text" id="modalCustomDateInput" placeholder="예: 2026.04.15" style="width: 140px; margin-left: 8px;">
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">2. 날짜 표기 형식 (Format)</label>
+          <select id="modalDateFormat">
+            <option value="YYYY.MM.DD" selected>YYYY.MM.DD (예: 2026.04.15 - 상세 일자 표기 권장)</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD (예: 2026-04-15)</option>
+            <option value="YYYY년 MM월 DD일">YYYY년 MM월 DD일 (예: 2026년 04월 15일)</option>
+            <option value="YYYY.MM">YYYY.MM (예: 2026.04 - 월까지만 표기)</option>
+            <option value="YYYY년 MM월">YYYY년 MM월 (예: 2026년 04월)</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">3. 적용 대상</label>
+          <div class="radio-list horizontal">
+            <label class="radio-item">
+              <input type="radio" name="dateScope" value="all" checked>
+              <span>전체 사진 (<strong id="dateModalAllCount">0</strong>장)</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="dateScope" value="current">
+              <span>현재 선택된 사진만</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="checkbox-container">
+            <input type="checkbox" id="modalFallbackMtime" checked>
+            <span>EXIF 촬영일 정보가 없는 경우 파일 수정일자로 자동 대체</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('dateModal')">취소</button>
+        <button class="btn btn-primary" id="btnApplyDateExtraction"><i class="fa-solid fa-check"></i> 날짜 추출 및 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스탬프 설정 모달 (글자색, 0% 투명도 지원) -->
+  <div class="modal" id="stampModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-stamp"></i> 스탬프 상세 설정</h3>
+        <button class="modal-close" onclick="closeModal('stampModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 실시간 스탬프 모양 미리보기 박스 -->
+        <div class="setting-group">
+          <label class="setting-label"><i class="fa-solid fa-eye"></i> 실시간 스탬프 모양 미리보기</label>
+          <div class="stamp-live-preview-box" id="stampLivePreviewBox">
+            <div id="stampLivePreviewOverlay" class="stamp-overlay stamp-bottom_right"></div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">스탬프 위치</label>
+          <select id="stampPosition">
+            <option value="bottom_right">우측 하단 (기본)</option>
+            <option value="bottom_left">좌측 하단</option>
+            <option value="top_right">우측 상단</option>
+            <option value="top_left">좌측 상단</option>
+          </select>
+        </div>
+
+        <!-- 글자색 및 배경색 선택 -->
+        <div class="setting-group color-setting-group">
+          <div class="color-item">
+            <label class="setting-label">스탬프 글자색:</label>
+            <div class="color-input-wrapper">
+              <input type="color" id="stTextColor" value="#ffffff">
+              <div class="color-palette">
+                <span class="color-chip" style="background:#ffffff;" onclick="setStampTextColor('#ffffff')" title="흰색"></span>
+                <span class="color-chip" style="background:#ffee58;" onclick="setStampTextColor('#ffee58')" title="노랑"></span>
+                <span class="color-chip" style="background:#ff9800;" onclick="setStampTextColor('#ff9800')" title="주황"></span>
+                <span class="color-chip" style="background:#4fc3f7;" onclick="setStampTextColor('#4fc3f7')" title="하늘색"></span>
+                <span class="color-chip" style="background:#000000;" onclick="setStampTextColor('#000000')" title="검정"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">배경 투명도 (<span id="stAlphaVal">65%</span>)</label>
+          <input type="range" id="stAlpha" min="0" max="100" value="65">
+          <small style="color:#6c757d;">* 0% 설정 시 배경 박스 없이 글자만 투명하게 표시됩니다.</small>
+        </div>
+
+        <div class="setting-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label class="setting-label" style="margin-bottom:0;">글자 크기 (<span id="stFontSizeVal">18pt</span>)</label>
+            <div style="display:flex; gap:4px;">
+              <button type="button" class="btn-xs btn-outline" onclick="setStampFontSize(14)">작게(14pt)</button>
+              <button type="button" class="btn-xs btn-outline" onclick="setStampFontSize(18)">보통(18pt)</button>
+              <button type="button" class="btn-xs btn-outline" onclick="setStampFontSize(22)">크게(22pt)</button>
+            </div>
+          </div>
+          <input type="range" id="stFontSize" min="12" max="32" value="18" style="margin-top:6px;">
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">표시 항목 선택</label>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" id="stShowProject"> 공사명 표시</label>
+            <label><input type="checkbox" id="stShowWork" checked> 공종 표시</label>
+            <label><input type="checkbox" id="stShowLoc" checked> 위치 표시</label>
+            <label><input type="checkbox" id="stShowContent" checked> 내용 표시</label>
+            <label><input type="checkbox" id="stShowDate" checked> 일자 표시</label>
+            <label><input type="checkbox" id="stBorder" checked> 테두리 표시</label>
+          </div>
+        </div>
+
+        <div class="setting-group" style="background:#f1f5f9; padding:10px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+          <label class="setting-label" style="margin-bottom:6px;"><i class="fa-solid fa-tags"></i> 항목 제목(라벨) 표시 형식</label>
+          <div style="display:flex; gap:16px; align-items:center;">
+            <label class="radio-item" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600;">
+              <input type="radio" name="stLabelMode" id="stLabelShow" value="show" checked>
+              <span><strong>제목 표시</strong> (예: <code>내 용 : 신호수</code>)</span>
+            </label>
+            <label class="radio-item" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600;">
+              <input type="radio" name="stLabelMode" id="stLabelHide" value="hide">
+              <span style="color:#0284c7;"><strong>제목 숨김 (내용만)</strong> (예: <code>신호수</code>)</span>
+            </label>
+          </div>
+          <small style="color:#64748b; margin-top:4px; display:block; font-size:11px;">* '제목 숨김' 선택 시 '공 종 :', '위 치 :', '내 용 :', '일 자 :' 라벨 없이 값만 깔끔하게 출력됩니다.</small>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">추가 문구</label>
+          <input type="text" id="stCustomText" placeholder="예: (주)한국건설 감리확인">
+        </div>
+
+        <div class="setting-group" style="background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #e2e8f0; margin-top:8px;">
+          <label class="checkbox-container" style="margin-bottom:0; cursor:pointer;">
+            <input type="checkbox" id="stApplyToAllPhotos" checked>
+            <span><strong style="color:#0284c7;">모든 사진에 스탬프 표시 활성화 (ON)</strong> - 적용 시 전체 사진에 즉시 반영</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="modal-footer-left" style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnResetStampSettings" title="초기 공장 기본값으로 복원">
+            <i class="fa-solid fa-rotate-left"></i> 기본값 복원
+          </button>
+          <button type="button" class="btn btn-dark btn-sm" id="btnSaveStampAsDefault" title="현재 설정을 브라우저 기본값으로 영구 저장">
+            <i class="fa-solid fa-floppy-disk"></i> 기본값으로 저장
+          </button>
+        </div>
+        <div class="modal-footer-right" style="display:flex; gap:6px;">
+          <button class="btn btn-secondary" onclick="closeModal('stampModal')">취소</button>
+          <button class="btn btn-primary" id="btnSaveStampSettings"><i class="fa-solid fa-check"></i> 적용하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사진대지 하단 설명 표 커스텀 설정 모달 -->
+  <div class="modal" id="tableModal">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-table-cells"></i> 사진대지 하단 설명 표 커스텀 설정</h3>
+        <button class="modal-close" onclick="closeModal('tableModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 원클릭 추천 프리셋 버튼 -->
+        <div class="setting-group">
+          <label class="setting-label">⚡ 원클릭 추천 양식 프리셋</label>
+          <div class="quick-preset-btns" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="btn btn-xs btn-outline" id="btnTablePresetStd">기본 관공서 (공종/내용/위치/일자 2줄)</button>
+            <button type="button" class="btn btn-xs btn-outline" id="btnTablePresetSimple">초간결 (공종/내용 1줄)</button>
+            <button type="button" class="btn btn-xs btn-outline" id="btnTablePresetQuality">품질·검측 (공종/검측부위/설계두께/일자 2줄)</button>
+            <button type="button" class="btn btn-xs btn-outline" id="btnTablePresetSafety">안전·점검 (위치/점검내용/조치사항/일자 2줄)</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label class="setting-label" style="margin-bottom:0;">📋 표시 항목 및 라벨 (1개 ~ 4개 선택)</label>
+            <span id="tableModalRowIndicator" class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; padding:4px 8px;">선택: 4개 (2줄 표시)</span>
+          </div>
+          <p class="setting-desc" style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+            * <strong>1~2개 선택 시 1줄</strong>, <strong>3~4개 선택 시 2줄</strong>로 자동 전환됩니다.<br>
+            * 표가 1줄로 줄어들면 줄어든 표 높이만큼 <strong>사진 영역이 위아래로 자연스럽게 확장</strong>되어 전체 A4 대지 규격과 마진이 100% 유지됩니다.
+          </p>
+
+          <div class="table-slot-config-list" id="tableSlotConfigList">
+            <!-- JS 동적 생성 -->
+          </div>
+        </div>
+
+        <!-- 실시간 미니 프리뷰 -->
+        <div class="setting-group">
+          <label class="setting-label">미니 미리보기</label>
+          <div id="tableModalLivePreview" class="table-modal-preview-box">
+            <!-- 미니 테이블 프리뷰 동적 렌더링 -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnResetTableConfig" title="초기 기본 4칸(공종/내용/위치/일자)으로 복원">
+            <i class="fa-solid fa-rotate-left"></i> 기본값 복원
+          </button>
+          <button type="button" class="btn btn-dark btn-sm" id="btnSaveTableAsDefault" title="현재 설정을 브라우저 기본값으로 영구 저장">
+            <i class="fa-solid fa-floppy-disk"></i> 기본값으로 저장
+          </button>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-secondary" onclick="closeModal('tableModal')">취소</button>
+          <button class="btn btn-primary" id="btnApplyTableConfig"><i class="fa-solid fa-check"></i> 적용하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 프리셋 관리 모달 -->
+  <div class="modal" id="presetModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders"></i> 프리셋 관리 (공종 / 위치 / 내용)</h3>
+        <button class="modal-close" onclick="closeModal('presetModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="preset-section">
+          <h4>등록된 콤보 세트</h4>
+          <div class="combo-list" id="presetComboList"></div>
+          <div class="add-combo-box">
+            <input type="text" id="newComboTitle" placeholder="세트명 (예: 골재포설)">
+            <input type="text" id="newComboWork" placeholder="공종">
+            <input type="text" id="newComboLoc" placeholder="위치">
+            <input type="text" id="newComboContent" placeholder="상세 내용">
+            <button id="btnAddCombo" class="btn btn-success btn-sm">세트 추가</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('presetModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사진 더블클릭 상세 정보 및 날짜 수정 전용 모달 -->
+  <div class="modal" id="photoDetailModal">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> 사진 상세 정보 및 날짜 수정</h3>
+        <button class="modal-close" onclick="closeModal('photoDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="photo-detail-layout">
+          <!-- 좌측: 실시간 스탬프 반영 대형 미리보기 -->
+          <div class="photo-detail-preview-col">
+            <div class="detail-preview-box" id="detailPreviewBox">
+              <div class="detail-preview-inner" id="detailPreviewInner">
+                <img id="detailPreviewImg" src="" alt="미리보기">
+                <div id="detailPreviewStamp" class="stamp-overlay"></div>
+              </div>
+            </div>
+            <div class="detail-preview-ctrls">
+              <span>빠른 회전:</span>
+              <button class="btn-xs btn-outline" onclick="rotateDetailModal(-90)"><i class="fa-solid fa-rotate-left"></i> -90°</button>
+              <button class="btn-xs btn-outline" onclick="rotateDetailModal(90)"><i class="fa-solid fa-rotate-right"></i> +90°</button>
+              <button class="btn-xs btn-outline" onclick="setDetailModalRotation(0)">0° (원본)</button>
+              <button class="btn-xs btn-outline" onclick="setDetailModalRotation(180)">180°</button>
+              <span id="lblDetailRotation" class="badge">0°</span>
+            </div>
+          </div>
+
+          <!-- 우측: 메타데이터 & 날짜 & 스탬프 편집 폼 -->
+          <div class="photo-detail-form-col">
+            <div class="detail-form-row">
+              <label class="detail-label"><i class="fa-solid fa-file-image"></i> 파일명:</label>
+              <span id="detailFileName" class="detail-static-text">photo.jpg</span>
+            </div>
+
+            <!-- 촬영일자 및 메타데이터 원클릭 추출 -->
+            <div class="detail-form-group date-highlight-box">
+              <label class="detail-label" for="detailFieldDate"><i class="fa-solid fa-calendar-day"></i> 촬영일자 (스탬프 & 정렬 연동):</label>
+              <div class="input-with-tools">
+                <input type="text" id="detailFieldDate" class="form-control" placeholder="YYYY.MM.DD (예: 2026.04.15)">
+              </div>
+              <div class="date-source-tags">
+                <button type="button" class="btn-xs btn-primary" id="btnDetailExif" title="사진 EXIF 메타데이터 촬영일로 설정">📷 EXIF 촬영일</button>
+                <button type="button" class="btn-xs btn-secondary" id="btnDetailMtime" title="파일 수정일시로 설정">📁 파일 수정일</button>
+                <button type="button" class="btn-xs btn-outline" id="btnDetailCtime" title="파일 생성일시로 설정">💾 생성일</button>
+                <button type="button" class="btn-xs btn-outline" id="btnDetailToday" title="오늘 날짜로 설정">📅 오늘</button>
+              </div>
+              <small class="form-hint">* 날짜를 수정하면 사진 속 스탬프 날짜가 즉시 바뀌며, 촬영일자 정렬 시 순서가 자동 반영됩니다.</small>
+            </div>
+
+            <div class="detail-form-group">
+              <label class="detail-label" for="detailFieldWork">공종 :</label>
+              <input type="text" id="detailFieldWork" class="form-control" placeholder="공종 (예: 토공사, 구조물공)">
+            </div>
+
+            <div class="detail-form-group">
+              <label class="detail-label" for="detailFieldLoc">위치 :</label>
+              <input type="text" id="detailFieldLoc" class="form-control" placeholder="위치 (예: STA. 0+120 좌측)">
+            </div>
+
+            <div class="detail-form-group">
+              <label class="detail-label" for="detailFieldStampContent" style="color: #0284c7;">
+                <i class="fa-solid fa-stamp"></i> 스탬프 표시 요약 (사진 속) :
+              </label>
+              <input type="text" id="detailFieldStampContent" class="form-control" placeholder="스탬프에 표시할 핵심 요약/키워드 (예: 신호수, 터파기)">
+              <small class="form-hint" style="margin-top:2px;">* 비워둘 경우 아래의 '사진대지 표 상세 설명'이 스탬프에 자동으로 표시됩니다.</small>
+            </div>
+
+            <div class="detail-form-group">
+              <label class="detail-label" for="detailFieldContent">
+                <i class="fa-solid fa-table-cells"></i> 사진대지 표 상세 설명 :
+              </label>
+              <input type="text" id="detailFieldContent" class="form-control" placeholder="사진대지 하단 표에 인쇄될 상세 시공 내용 (예: 신호수 배치 및 안전통로 확보)">
+            </div>
+
+            <div class="detail-form-group" id="detailGroupCustom1" style="display:none;">
+              <label class="detail-label" for="detailFieldCustom1" id="lblDetailCustom1">사용자 속성 1 :</label>
+              <input type="text" id="detailFieldCustom1" class="form-control" placeholder="사용자 정의 내용 1">
+            </div>
+
+            <div class="detail-form-group" id="detailGroupCustom2" style="display:none;">
+              <label class="detail-label" for="detailFieldCustom2" id="lblDetailCustom2">사용자 속성 2 :</label>
+              <input type="text" id="detailFieldCustom2" class="form-control" placeholder="사용자 정의 내용 2">
+            </div>
+
+            <!-- 세부 옵션: 크롭, 여백, 개별 스탬프 -->
+            <div class="detail-form-row-multi">
+              <div class="form-sub-item">
+                <label>크롭 모드:</label>
+                <select id="detailCropMode">
+                  <option value="cover">비율유지 꽉채움</option>
+                  <option value="fit">비율유지 여백</option>
+                  <option value="stretch">늘임 (Stretch)</option>
+                </select>
+              </div>
+              <div class="form-sub-item">
+                <label>여백(Padding):</label>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <input type="range" id="detailSliderPadding" min="0" max="35" value="0" style="width:70px;">
+                  <span id="lblDetailPaddingVal" class="badge">0px</span>
+                </div>
+              </div>
+              <div class="form-sub-item" style="justify-content: flex-end;">
+                <label class="checkbox-container" style="margin: 0;">
+                  <input type="checkbox" id="detailStampToggle" checked>
+                  <span>스탬프 표시</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="detail-alert-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>원본 사진 파일은 변경되지 않으며, 대지 출력 및 프로젝트 파일 저장 시 안전하게 보존됩니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('photoDetailModal')">취소</button>
+        <button class="btn btn-primary" id="btnSavePhotoDetail"><i class="fa-solid fa-check"></i> 수정사항 적용 및 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 일괄 입력 전용 확장 모달 (대안 B) -->
+  <div class="modal" id="batchEditModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bolt" style="color: #0d6efd;"></i> 일괄 입력 상세 편집 (<span id="modalBatchTargetDesc">전체 대상</span>)</h3>
+        <button class="close-btn" onclick="closeModal('batchEditModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div class="batch-modal-alert">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>선택된 사진들에 동일한 정보를 한 번에 입력합니다. 비어 있는 입력창의 항목은 기존 사진의 정보를 그대로 안전하게 보존합니다.</span>
+        </div>
+
+        <div class="detail-form-group">
+          <label class="detail-label" for="modalBatchWork">공종 :</label>
+          <input type="text" id="modalBatchWork" class="form-control" placeholder="일괄 공종 (예: 토공사, 배수공, 구조물공)">
+        </div>
+
+        <div class="detail-form-group">
+          <label class="detail-label" for="modalBatchLoc">위치 :</label>
+          <input type="text" id="modalBatchLoc" class="form-control" placeholder="일괄 위치 (예: STA. 0+120 좌측 법면)">
+        </div>
+
+        <div class="detail-form-group">
+          <label class="detail-label" for="modalBatchStampContent" style="color: #0284c7;">
+            <i class="fa-solid fa-stamp"></i> 일괄 스탬프 요약 (사진 위 스탬프) :
+          </label>
+          <input type="text" id="modalBatchStampContent" class="form-control" placeholder="일괄 스탬프 요약/키워드 (예: 신호수, 터파기)">
+          <div class="batch-quick-tags" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('신호수')">신호수</button>
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('터파기')">터파기</button>
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('자재반입')">자재반입</button>
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('철근배근')">철근배근</button>
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('콘크리트타설')">콘크리트타설</button>
+            <button type="button" class="btn-xs btn-outline" onclick="setBatchStampTag('안전점검')">안전점검</button>
+          </div>
+        </div>
+
+        <div class="detail-form-group">
+          <label class="detail-label" for="modalBatchContent">
+            <i class="fa-solid fa-table-cells"></i> 일괄 표 상세 설명 (사진대지 하단 표) :
+          </label>
+          <textarea id="modalBatchContent" class="form-control" rows="3" style="resize: vertical; font-size: 13px; line-height: 1.5;" placeholder="사진대지 하단 표에 인쇄될 일괄 상세 내용 (예: 신호수 배치 및 안전통로 확보 후 터파기 작업 진행 확인)"></textarea>
+          <div class="batch-quick-tags" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn-xs btn-outline" onclick="appendBatchTag('신호수 배치 및 안전통로 확보')">신호수 배치</button>
+            <button type="button" class="btn-xs btn-outline" onclick="appendBatchTag('기초 터파기 및 지반 다짐 확인')">터파기 작업</button>
+            <button type="button" class="btn-xs btn-outline" onclick="appendBatchTag('자재 반입 및 규격 검수')">자재 반입</button>
+            <button type="button" class="btn-xs btn-outline" onclick="appendBatchTag('철근 배근 간격 및 피복두께 검측')">철근 배근</button>
+            <button type="button" class="btn-xs btn-outline" onclick="appendBatchTag('콘크리트 타설 및 양생 관리')">콘크리트 타설</button>
+          </div>
+        </div>
+
+        <div class="detail-form-group date-highlight-box">
+          <label class="detail-label" for="modalBatchDate"><i class="fa-solid fa-calendar-day"></i> 촬영일자 (스탬프 & 정렬 연동) :</label>
+          <div class="input-with-tools">
+            <input type="text" id="modalBatchDate" class="form-control" placeholder="YYYY.MM.DD (예: 2026.04.15)">
+          </div>
+          <div class="date-source-tags">
+            <button type="button" class="btn-xs btn-primary" id="btnModalBatchExif" title="사진 EXIF 메타데이터 촬영일로 일괄 설정">📷 EXIF 촬영일 추출</button>
+            <button type="button" class="btn-xs btn-secondary" id="btnModalBatchMtime" title="파일 수정일시로 설정">📁 파일 수정일</button>
+            <button type="button" class="btn-xs btn-outline" id="btnModalBatchToday" title="오늘 날짜로 설정">📅 오늘</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('batchEditModal')">취소</button>
+        <button class="btn btn-primary" id="btnApplyModalBatch"><i class="fa-solid fa-check"></i> <span id="modalBatchApplyBtnText">일괄 적용하기</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사용자 정의 UI 버튼 설정 모달 -->
+  <div id="modalCustomUi" class="modal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders" style="color: var(--accent-blue);"></i> 사용자 모드 UI 버튼 구성 설정</h3>
+        <button class="modal-close" onclick="closeModal('modalCustomUi')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 6px;">
+          사용자 모드(Custom Mode)에서 화면에 표시할 기능 버튼을 자유롭게 선택하세요.<br>
+          자주 쓰지 않는 기능을 숨기면 화면이 정돈되어 빠르고 편리하게 작업할 수 있습니다.
+        </p>
+
+        <div class="custom-ui-grid">
+          <!-- 상단 툴바 기능군 -->
+          <div class="custom-ui-section">
+            <div class="custom-ui-section-title"><i class="fa-solid fa-toolbox"></i> 상단 기능 도구</div>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_folder"> <span>📁 폴더 통째로 추가</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_paste"> <span>📋 붙여넣기 (Ctrl+V)</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_dateExtract"> <span>📅 날짜 추출도구</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_presets"> <span>🎛️ 프리셋 관리</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_openProj"> <span>📂 프로젝트 열기</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_exportZip"> <span>📦 사진 일괄 ZIP</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_exportPdf"> <span>📕 A4 사진대지 PDF</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_tableSettings"> <span>📋 사진대지 표 설정</span></label>
+          </div>
+
+          <!-- 편집 바 컨트롤군 -->
+          <div class="custom-ui-section">
+            <div class="custom-ui-section-title"><i class="fa-solid fa-pen-ruler"></i> 편집 툴바 세부 옵션</div>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_cropPreset"> <span>✨ 프리셋 드롭다운</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_cropMode"> <span>✂️ 사진 크롭 방식 (Cover/Fit)</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_rotate"> <span>⟲ 회전 버튼 (90° / -90°)</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_padding"> <span>↔️ 사진 내부 여백 조절</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_metaWorkLoc"> <span>🏷️ 공종 및 위치 입력</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_metaCustom"> <span>⚙️ 사용자 속성 (1/2) 입력</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_metaDate"> <span>📆 촬영일자 및 퀵추출</span></label>
+            <label class="custom-chk-item"><input type="checkbox" id="chkCust_batchPanel"> <span>⚡ 좌측 하단 일괄 패널</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-outline" onclick="resetCustomUiDefaults()"><i class="fa-solid fa-rotate-left"></i> 기본값 복원</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalCustomUi')">취소</button>
+          <button type="button" class="btn btn-primary" onclick="saveCustomUiSettings()"><i class="fa-solid fa-check"></i> 설정 적용</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사용 가이드 & 설명서 모달 -->
+  <div id="modalGuide" class="modal">
+    <div class="modal-dialog modal-lg guide-modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-book-open" style="color: var(--accent-blue);"></i> Minos 사진대지 Studio 완벽 활용 가이드</h3>
+        <button class="modal-close" onclick="closeModal('modalGuide')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <div class="guide-tabs-bar">
+          <button type="button" class="guide-tab-btn active" data-target="tabQuickStart" onclick="switchGuideTab('tabQuickStart')">
+            <i class="fa-solid fa-bolt"></i> <span>빠른 시작</span>
+          </button>
+          <button type="button" class="guide-tab-btn" data-target="tabUiModes" onclick="switchGuideTab('tabUiModes')">
+            <i class="fa-solid fa-sliders"></i> <span>3단계 작업 모드</span>
+          </button>
+          <button type="button" class="guide-tab-btn" data-target="tabShortcuts" onclick="switchGuideTab('tabShortcuts')">
+            <i class="fa-solid fa-keyboard"></i> <span>단축키 & 꿀팁</span>
+          </button>
+          <button type="button" class="guide-tab-btn" data-target="tabFaq" onclick="switchGuideTab('tabFaq')">
+            <i class="fa-solid fa-circle-question"></i> <span>자주 묻는 질문</span>
+          </button>
+        </div>
+
+        <div class="guide-content-area">
+          <!-- 탭 1: 빠른 시작 -->
+          <div id="tabQuickStart" class="guide-tab-pane active">
+            <div class="guide-step-card">
+              <div class="guide-step-badge">1</div>
+              <div class="guide-step-body">
+                <h4>사진 등록하기 (3가지 방법)</h4>
+                <ul>
+                  <li><strong>[➕ 파일 추가] / [📁 폴더 추가]</strong> : 상단 툴바 버튼으로 여러 장의 사진이나 폴더를 한 번에 불러옵니다.</li>
+                  <li><strong>마우스 드래그 앤 드롭</strong> : 윈도우 탐색기에서 사진 또는 폴더를 좌측 사진 목록으로 끌어다 놓으면 즉시 자동 등록됩니다.</li>
+                  <li><strong>클립보드 붙여넣기 (<kbd>Ctrl</kbd>+<kbd>V</kbd>)</strong> : 캡처 도구 등으로 복사한 이미지를 <code>Ctrl+V</code>로 바로 사진대지에 추가할 수 있습니다.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step-card">
+              <div class="guide-step-badge">2</div>
+              <div class="guide-step-body">
+                <h4>사진 내용 입력 및 스탬프 설정</h4>
+                <ul>
+                  <li><strong>정보표 입력</strong> : 공종, 위치, <strong>표 상세설명</strong>을 입력하면 하단 메타 표에 100% 반영됩니다.</li>
+                  <li><strong>현장 스탬프 오버레이</strong> : [스탬프 표시]를 켜면 사진 내부에 일자, 공종, 위치, 내용이 담긴 현장 스탬프가 자동 합성됩니다.</li>
+                  <li><strong>정밀 상세 편집</strong> : 사진을 <strong>더블클릭</strong>하면 확대 창에서 회전(90°), 여백, 크롭, EXIF 원클릭 날짜 추출을 손쉽게 수행할 수 있습니다.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step-card">
+              <div class="guide-step-badge">3</div>
+              <div class="guide-step-body">
+                <h4>보고서 출력 및 영구 저장</h4>
+                <ul>
+                  <li><strong>[🖨️ 인쇄] (<kbd>Ctrl</kbd>+<kbd>P</kbd>)</strong> : 관공서 표준 A4 세로 2단 양식으로 여백과 비율이 100% 자동 최적화되어 깔끔하게 즉시 인쇄됩니다.</li>
+                  <li><strong>[📊 엑셀]</strong> : 원본 서식과 동일하게 96% 정밀 배율로 대칭 정렬된 엑셀(.xlsx) 파일로 내보냅니다.</li>
+                  <li><strong>[📕 PDF]</strong> : 고해상도 벡터 PDF 파일로 즉시 변환 저장합니다.</li>
+                  <li><strong>[💾 저장]</strong> : 현재 작업 상태 전체를 <code>.picboard</code> 프로젝트 파일로 저장하여 나중에 언제든 원상 복구할 수 있습니다.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- 탭 2: 3단계 작업 모드 -->
+          <div id="tabUiModes" class="guide-tab-pane">
+            <div class="guide-mode-intro">
+              <p>상단 중앙의 <strong>[⚙️ 모드]</strong> 스위처를 통해 작업 목적에 맞는 최적의 화면 모드를 선택할 수 있습니다. 모든 모드 상태는 실시간으로 자동 보존됩니다.</p>
+            </div>
+            <div class="guide-mode-card mode-easy-border">
+              <div class="guide-mode-title"><i class="fa-solid fa-bolt" style="color: #fbbf24;"></i> ⚡ 이지 모드 (Easy Mode)</div>
+              <p class="guide-mode-desc"><strong>초간결 실무 집중 모드</strong>: 복잡한 옵션을 모두 숨기고 꼭 필요한 5종 버튼(파일추가, 표 상세설명, 스탬프 표시, 저장, 엑셀, 인쇄, 종료)만 노출합니다. 보고서를 빠르고 직관적으로 작성할 때 가장 추천합니다.</p>
+            </div>
+
+            <div class="guide-mode-card mode-custom-border">
+              <div class="guide-mode-title"><i class="fa-solid fa-sliders" style="color: #60a5fa;"></i> ⚙️ 사용자 정의 모드 (Custom Mode)</div>
+              <p class="guide-mode-desc"><strong>맞춤형 작업 환경</strong>: 모드 옆의 <code>[⚙️]</code> 버튼을 눌러 내가 자주 쓰는 버튼(폴더추가, 붙여넣기, 날짜추출, 프리셋, 회전 등)만 체크하여 나만의 툴바를 구성합니다. 숨겨진 기능도 단축키와 백엔드 데이터는 완벽히 유지됩니다.</p>
+            </div>
+
+            <div class="guide-mode-card mode-expert-border">
+              <div class="guide-mode-title"><i class="fa-solid fa-cube" style="color: #a78bfa;"></i> 🚀 전문가 모드 (Expert Mode)</div>
+              <p class="guide-mode-desc"><strong>100% 전체 기능 노출 모드</strong>: 프리셋 관리, 4종 날짜 퀵 추출, 여백 슬라이더, 일괄 수정 패널, 프로젝트 열기, 사진 ZIP 내보내기 등 스튜디오의 모든 전문 도구를 한눈에 자유롭게 다룰 수 있습니다.</p>
+            </div>
+          </div>
+
+          <!-- 탭 3: 단축키 & 꿀팁 -->
+          <div id="tabShortcuts" class="guide-tab-pane">
+            <div class="guide-table-wrap">
+              <table class="guide-shortcut-table">
+                <thead>
+                  <tr>
+                    <th style="width: 160px;">단축키 / 조작</th>
+                    <th>기능 설명</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><kbd>Ctrl</kbd> + <kbd>V</kbd></td>
+                    <td>클립보드에 복사된 캡처 이미지를 사진 목록에 즉시 추가</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl</kbd> + <kbd>P</kbd></td>
+                    <td>A4 사진대지 즉시 인쇄 창 호출 (표준 규격 100% 자동 맞춤)</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Shift</kbd> + 사진 클릭</td>
+                    <td>탐색기 스타일로 시작 사진부터 끝 사진까지 <strong>구간 연속 다중 선택</strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>사진 더블클릭</strong></td>
+                    <td>해당 사진의 전용 <strong>대형 상세 편집창(모달)</strong> 즉시 팝업</td>
+                  </tr>
+                  <tr>
+                    <td><strong>다중 선택 후 툴바 조작</strong></td>
+                    <td>사진을 2장 이상 체크한 뒤 상단 툴바의 '여백', '회전', '스탬프'를 조작하면 <strong>선택된 모든 사진에 실시간 동시 일괄 적용</strong></td>
+                  </tr>
+                  <tr>
+                    <td><kbd>➖ 빈 페이지 삭제</kbd></td>
+                    <td>추가했던 여분의 빈 페이지를 안전하게 원클릭 삭제 (사진이 있는 페이지는 절대 삭제되지 않음)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 탭 4: 자주 묻는 질문 (FAQ) -->
+          <div id="tabFaq" class="guide-tab-pane">
+            <div class="guide-faq-item">
+              <div class="guide-faq-q"><i class="fa-solid fa-circle-question" style="color: var(--accent-blue);"></i> Q. 인쇄 시 종이 밖으로 표가 삐져나오거나 잘리지 않나요?</div>
+              <div class="guide-faq-a">A. 전혀 걱정하지 않으셔도 됩니다! 관공서 및 공공기관 제출 표준 양식(A4 세로 2단, 좌우 15mm 여백)에 완벽 호환되도록 1px의 오차도 없이 고정 설계되어 있습니다. 브라우저 인쇄 창에서 배율을 '기본값(100%)' 또는 '페이지에 맞춤'으로 두고 출력하시면 깨끗하게 인쇄됩니다.</div>
+            </div>
+
+            <div class="guide-faq-item">
+              <div class="guide-faq-q"><i class="fa-solid fa-circle-question" style="color: var(--accent-blue);"></i> Q. 프로그램을 종료하면 작업 모드나 체크박스 설정이 초기화되나요?</div>
+              <div class="guide-faq-a">A. 초기화되지 않습니다! 브라우저 로컬 저장소(localStorage)와 프로그램 설치 디스크(user_settings.json)에 0.001초 단위로 실시간 2중 저장되므로, 프로그램을 껐다 켜거나 PC를 재부팅해도 직전에 쓰던 모드와 설정 그대로 다시 시작됩니다.</div>
+            </div>
+
+            <div class="guide-faq-item">
+              <div class="guide-faq-q"><i class="fa-solid fa-circle-question" style="color: var(--accent-blue);"></i> Q. 인터넷이 안 되는 지하 현장이나 오지에서도 사용할 수 있나요?</div>
+              <div class="guide-faq-a">A. 네! 모든 웹 폰트, 아이콘(FontAwesome), 스타일시트, 파이썬 서버 엔진이 프로그램 내부에 100% 독립 내장되어 있어 인터넷 연결이 완전히 끊긴 오프라인 환경에서도 모든 기능이 완벽하게 동작합니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('modalGuide')"><i class="fa-solid fa-check"></i> 확인 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller & Build artifacts
+build/
+dist/
+*.exe
+*.manifest
+
+# Backups & Temporary uploads / exports (현장 데이터 보호)
+_backups/
+temp_uploads/
+uploads/
+exports/
+*.xlsx
+*.pdf
+!pictureboard.pdf
+*.zip
+*.lnk
+*.log
+
+# User personal settings & environment
+user_settings.json
+.env
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
